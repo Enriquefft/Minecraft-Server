@@ -1,0 +1,30 @@
+{
+  "name": "minecraft-server",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "minecraft-server": "bin/minecraft-server.js"
+  },
+  "scripts": {
+    "build": "bun build ./bin/minecraft-server.ts --target bun",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "@types/node": "22.7.9",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "aws-cdk": "2.173.2",
+    "eslint": "8",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-jsdoc": "^50.6.1",
+    "eslint-plugin-security": "^3.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.6.3"
+  },
+  "dependencies": {
+    "@t3-oss/env-core": "^0.11.1",
+    "aws-cdk-lib": "2.173.2",
+    "constructs": "^10.4.2",
+    "zod": "^3.24.1"
+  }
+}
