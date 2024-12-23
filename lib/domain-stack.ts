@@ -89,12 +89,13 @@ export class DomainStack extends Stack {
         `Hosted zone ${subdomainHostedZone.zoneName} does not have any name servers.`,
       );
     }
-    const nsRecord = new route53.NsRecord(this, "NSRecord", {
+    new route53.NsRecord(this, "NSRecord", {
       zone: rootHostedZone,
       values: subdomainHostedZone.hostedZoneNameServers,
       recordName: subdomain,
     });
 
+    const A_RECORD_TTL = 30;
     const aRecord = new route53.ARecord(this, "ARecord", {
       target: {
         /**
@@ -108,7 +109,7 @@ export class DomainStack extends Stack {
        * servers won't cache the record long and you can connect quicker after
        * the IP updates.
        */
-      ttl: Duration.seconds(30),
+      ttl: Duration.seconds(A_RECORD_TTL),
       recordName: subdomain,
       zone: subdomainHostedZone,
     });
@@ -154,31 +155,23 @@ export class DomainStack extends Stack {
      * Add the subdomain hosted zone ID to SSM since we cannot consume a cross-stack
      * references across regions.
      */
-    const SSM_HOSTED_ZONE_PARAMS = new ssm.StringParameter(
-      this,
-      "HostedZoneParam",
-      {
-        allowedPattern: ".*",
-        description: "Hosted zone ID for minecraft server",
-        parameterName: constants.HOSTED_ZONE_SSM_PARAMETER,
-        stringValue: subdomainHostedZone.hostedZoneId,
-      },
-    );
+    new ssm.StringParameter(this, "HostedZoneParam", {
+      allowedPattern: ".*",
+      description: "Hosted zone ID for minecraft server",
+      parameterName: constants.HOSTED_ZONE_SSM_PARAMETER,
+      stringValue: subdomainHostedZone.hostedZoneId,
+    });
 
     /**
      * Add the ARN for the launcher lambda execution role to SSM so we can
      * attach the policy for accessing the minecraft server after it has been
      * created.
      */
-    const SSM_LAUNCHER_LAMBDA_PARAMS = new ssm.StringParameter(
-      this,
-      "LauncherLambdaParam",
-      {
-        allowedPattern: ".*S.*",
-        description: "Minecraft launcher execution role ARN",
-        parameterName: constants.LAUNCHER_LAMBDA_ARN_SSM_PARAMETER,
-        stringValue: launcherLambda.role?.roleArn ?? "",
-      },
-    );
+    new ssm.StringParameter(this, "LauncherLambdaParam", {
+      allowedPattern: ".*S.*",
+      description: "Minecraft launcher execution role ARN",
+      parameterName: constants.LAUNCHER_LAMBDA_ARN_SSM_PARAMETER,
+      stringValue: launcherLambda.role?.roleArn ?? "",
+    });
   }
 }

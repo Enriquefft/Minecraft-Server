@@ -4,6 +4,8 @@
 {
   "exclude": ["node_modules", "cdk.out"],
 
+  "include": ["**/*.ts", "**/*.js", "**/*.cjs", "**/*.mjs", ".eslintrc.cjs"],
+
   "ts-node": {
     "esm": true // «———— enabling ESM for ts-node
   },
@@ -12,9 +14,7 @@
     "plugins": [],
 
     // Specify a set of entries that re-map imports to additional lookup locations.
-    "paths": {
-      "@/*": ["./src/*"]
-    },
+    "paths": {},
 
     ///////////////////////////////////////
     //////////// Projects /////////////////

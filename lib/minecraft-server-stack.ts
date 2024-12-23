@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as path from "path";
 import {
@@ -115,6 +117,8 @@ export class MinecraftServerStack extends Stack {
       config.minecraftEdition,
     );
 
+    console.log("mine\n", config.minecraftImageEnv);
+
     const minecraftServerContainer = new ecs.ContainerDefinition(
       this,
       "ServerContainer",
@@ -206,54 +210,61 @@ export class MinecraftServerStack extends Stack {
 
       snsTopic.grantPublish(ecsTaskRole);
 
-      const emailSubscription = new sns.Subscription(
-        this,
-        "EmailSubscription",
-        {
-          protocol: sns.SubscriptionProtocol.EMAIL,
-          topic: snsTopic,
-          endpoint: config.snsEmailAddress,
-        },
-      );
+      new sns.Subscription(this, "EmailSubscription", {
+        protocol: sns.SubscriptionProtocol.EMAIL,
+        topic: snsTopic,
+        endpoint: config.snsEmailAddress,
+      });
       snsTopicArn = snsTopic.topicArn;
     }
 
-    // Error: Cannot find image directory at /home/hybridz/Projects/minecraft-ecsfargate-watchdog
-    const watchdogContainer = new ecs.ContainerDefinition(
-      this,
-      "WatchDogContainer",
-      {
-        containerName: constants.WATCHDOG_SERVER_CONTAINER_NAME,
-        image: isDockerInstalled()
-          ? ecs.ContainerImage.fromAsset(
-              path.resolve(__dirname, "../minecraft-ecsfargate-watchdog/"),
-            )
-          : ecs.ContainerImage.fromRegistry(
-              "doctorray/minecraft-ecsfargate-watchdog",
-            ),
-        essential: true,
-        taskDefinition,
-        environment: {
-          CLUSTER: constants.CLUSTER_NAME,
-          SERVICE: constants.SERVICE_NAME,
-          DNSZONE: hostedZoneId,
-          SERVERNAME: `${config.subdomainPart}.${config.domainName}`,
-          SNSTOPIC: snsTopicArn,
-          TWILIOFROM: config.twilio.phoneFrom,
-          TWILIOTO: config.twilio.phoneTo,
-          TWILIOAID: config.twilio.accountId,
-          TWILIOAUTH: config.twilio.authCode,
-          STARTUPMIN: config.startupMinutes,
-          SHUTDOWNMIN: config.shutdownMinutes,
-        },
-        logging: config.debug
-          ? new ecs.AwsLogDriver({
-              logRetention: logs.RetentionDays.THREE_DAYS,
-              streamPrefix: constants.WATCHDOG_SERVER_CONTAINER_NAME,
-            })
-          : undefined,
+    console.log({
+      environment: {
+        CLUSTER: constants.CLUSTER_NAME,
+        SERVICE: constants.SERVICE_NAME,
+        DNSZONE: hostedZoneId,
+        SERVERNAME: `${config.subdomainPart}.${config.domainName}`,
+        SNSTOPIC: snsTopicArn,
+        TWILIOFROM: config.twilio.phoneFrom,
+        TWILIOTO: config.twilio.phoneTo,
+        TWILIOAID: config.twilio.accountId,
+        TWILIOAUTH: config.twilio.authCode,
+        STARTUPMIN: config.startupMinutes,
+        SHUTDOWNMIN: config.shutdownMinutes,
       },
-    );
+    });
+
+    new ecs.ContainerDefinition(this, "WatchDogContainer", {
+      containerName: constants.WATCHDOG_SERVER_CONTAINER_NAME,
+      image: isDockerInstalled()
+        ? ecs.ContainerImage.fromAsset(
+            path.resolve(__dirname, "../minecraft-ecsfargate-watchdog/"),
+          )
+        : ecs.ContainerImage.fromRegistry(
+            "doctorray/minecraft-ecsfargate-watchdog",
+          ),
+      essential: true,
+      taskDefinition,
+      environment: {
+        CLUSTER: constants.CLUSTER_NAME,
+        SERVICE: constants.SERVICE_NAME,
+        DNSZONE: hostedZoneId,
+        SERVERNAME: `${config.subdomainPart}.${config.domainName}`,
+        SNSTOPIC: snsTopicArn,
+        TWILIOFROM: config.twilio.phoneFrom,
+        TWILIOTO: config.twilio.phoneTo,
+        TWILIOAID: config.twilio.accountId,
+        TWILIOAUTH: config.twilio.authCode,
+        STARTUPMIN: config.startupMinutes,
+        SHUTDOWNMIN: config.shutdownMinutes,
+      },
+      logging: config.debug
+        ? new ecs.AwsLogDriver({
+            logRetention: logs.RetentionDays.THREE_DAYS,
+            streamPrefix: constants.WATCHDOG_SERVER_CONTAINER_NAME,
+          })
+        : undefined,
+    });
 
     const serviceControlPolicy = new iam.Policy(this, "ServiceControlPolicy", {
       statements: [

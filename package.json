@@ -9,10 +9,12 @@
     "build": "bun build ./bin/minecraft-server.ts --target bun && cdk bootstrap --profile personal",
     "deploy": "cdk deploy --all --profile personal",
     "destroy": "cdk destroy --all --profile personal",
-    "diff": "cdk diff --profile personal"
+    "diff": "cdk diff --profile personal",
+        "lint": "eslint . --fix"
   },
   "devDependencies": {
     "@types/bun": "^1.1.14",
+    "@types/eslint": "8",
     "@types/node": "22.7.9",
     "@typescript-eslint/eslint-plugin": "^8.18.1",
     "aws-cdk": "2.173.2",

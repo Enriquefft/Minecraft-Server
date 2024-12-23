@@ -1,6 +1,70 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import type { Protocol } from "aws-cdk-lib/aws-ecs";
 import type { Port } from "aws-cdk-lib/aws-ec2";
-import type { MinecraftImageEnv } from "./json-parse.ts";
+
+import { z } from "zod";
+
+/**
+ * Transform a string into a boolean (`"true"` => true, `"false"` => false).
+ * Throws if the input is a non-string or some unexpected string.
+ * You can make this more lenient if needed.
+ */
+export const booleanStringSchema = z.string().transform((val) => {
+  const lower = val.toLowerCase();
+  if (lower === "true") return true;
+  if (lower === "false") return false;
+  throw new Error(`Expected "true" or "false", got "${val}"`);
+});
+
+/**
+ * Transform a string to a number.
+ * Throws if the string is not a valid integer.
+ * If you need floats, adjust parseInt => parseFloat.
+ */
+export const stringToNumberSchema = z.string().transform((val) => {
+  const parsed = parseInt(val, 10);
+  if (isNaN(parsed)) {
+    throw new Error(`Expected number, received "${val}"`);
+  }
+  return parsed;
+});
+
+export const stringIsNumberSchema = z.string().refine(
+  (val) => {
+    const num = Number(val);
+    return !isNaN(num) && val.length > 0;
+  },
+  { message: "Invalid number" },
+);
+
+export const stringIsBooleanSchema = z
+  .string()
+  .refine(
+    (val) =>
+      val === "true" || val === "false" || val === "TRUE" || val === "FALSE",
+    {
+      message: "Invalid boolean",
+    },
+  );
+
+/**
+ * The top-level schema that ensures:
+ * - It is an object with at least { EULA: string }
+ * - All other properties are valid JSON (validated by the above `jsonSchema`).
+ */
+export const minecraftEnvVarsSchema = z.preprocess(
+  (val: unknown) => {
+    const jsonValue = z.string().parse(val);
+    return JSON.parse(jsonValue);
+  },
+  z
+    .object({
+      EULA: z.literal("TRUE"),
+      ONLINE_MODE: stringIsBooleanSchema.optional(),
+    })
+    .catchall(z.string()),
+);
+export type MinecraftImageEnv = z.infer<typeof minecraftEnvVarsSchema>;
 
 interface TwilioConfig {
   /**

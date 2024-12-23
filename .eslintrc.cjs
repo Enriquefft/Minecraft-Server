@@ -16,6 +16,9 @@ const jsdocRules = {
 const jsRules = {
   "no-ternary": "off",
   "sort-keys": "off",
+    "no-multi-str": "off",
+
+  "no-new": "off",
 
   "func-names": ["error", "as-needed"],
 
@@ -114,11 +117,7 @@ const defaultRules = Object.assign(jsRules, tsRules, jsdocRules);
 
 /** @type {import("eslint").Linter.Config} */
 const config = {
-  ignorePatterns: [
-    "**/old/**/*",
-    "**/schema.gen*",
-    "experimental",
-  ],
+  ignorePatterns: ["**/old/**/*", "cdk.out", "experimental"],
   parserOptions,
   extends: [
     "eslint:all",
@@ -131,10 +130,12 @@ const config = {
   overrides: [
     {
       files: ["*.[jt]sx"],
-      rules: Object.assign(defaultRules, ),
+      rules: defaultRules,
     },
   ],
-  globals: {
+  globals: {},
+  env: {
+    node: true,
   },
 };
 module.exports = config;

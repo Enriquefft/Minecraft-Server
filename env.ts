@@ -1,41 +1,16 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
-import { minecraftEnvVarsSchema } from "./lib/json-parse";
 
-/**
- * Transform a string into a boolean (`"true"` => true, `"false"` => false).
- * Throws if the input is a non-string or some unexpected string.
- * You can make this more lenient if needed.
- */
-const booleanStringSchema = z.string().transform((val) => {
-  const lower = val.toLowerCase();
-  if (lower === "true") return true;
-  if (lower === "false") return false;
-  throw new Error(`Expected "true" or "false", got "${val}"`);
-});
+import {
+  minecraftEnvVarsSchema,
+  booleanStringSchema,
+  stringIsNumberSchema,
+  stringToNumberSchema,
+} from "./lib/types";
 
-/**
- * Transform a string to a number.
- * Throws if the string is not a valid integer.
- * If you need floats, adjust parseInt => parseFloat.
- */
-const stringToNumberSchema = z.string().transform((val) => {
-  const parsed = parseInt(val, 10);
-  if (isNaN(parsed)) {
-    throw new Error(`Expected number, received "${val}"`);
-  }
-  return parsed;
-});
-
-const stringIsNumberSchema = z.string().refine(
-  (val) => {
-    const num = Number(val);
-    return !isNaN(num) && val.length > 0;
-  },
-  { message: "Invalid number" },
-);
-
+const DEFAULT_TASK_MEMORY = "2048";
+const DEFAULT_TASK_CPU = "1024";
 export const env = createEnv({
   server: {
     // Required
@@ -51,8 +26,8 @@ export const env = createEnv({
     STARTUP_MINUTES: stringIsNumberSchema.optional(),
     SHUTDOWN_MINUTES: stringIsNumberSchema.optional(),
     USE_FARGATE_SPOT: booleanStringSchema.optional(),
-    TASK_MEMORY: stringToNumberSchema.optional(),
-    TASK_CPU: stringToNumberSchema.optional(),
+    TASK_MEMORY: stringToNumberSchema.optional().default(DEFAULT_TASK_MEMORY),
+    TASK_CPU: stringToNumberSchema.optional().default(DEFAULT_TASK_CPU),
     VPC_ID: z.string().optional(),
     MINECRAFT_IMAGE_ENV_VARS_JSON: minecraftEnvVarsSchema,
     SNS_EMAIL_ADDRESS: z.string().optional(),
