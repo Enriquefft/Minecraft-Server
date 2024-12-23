@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { custom_resources as cr, type aws_iam as iam, Duration } from "aws-cdk-lib";
+import {
+  custom_resources as cr,
+  type aws_iam as iam,
+  Duration,
+} from "aws-cdk-lib";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 

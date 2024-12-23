@@ -218,7 +218,7 @@ export class MinecraftServerStack extends Stack {
       snsTopicArn = snsTopic.topicArn;
     }
 
-    // error: Cannot find image directory at /home/hybridz/Projects/minecraft-ecsfargate-watchdog
+    // Error: Cannot find image directory at /home/hybridz/Projects/minecraft-ecsfargate-watchdog
     const watchdogContainer = new ecs.ContainerDefinition(
       this,
       "WatchDogContainer",
@@ -263,7 +263,7 @@ export class MinecraftServerStack extends Stack {
           actions: ["ecs:*"],
           resources: [
             minecraftServerService.serviceArn,
-            /* arn:aws:ecs:<region>:<account_number>:task/minecraft/* */
+            /* Arn:aws:ecs:<region>:<account_number>:task/minecraft/* */
             Arn.format(
               {
                 service: "ecs",
