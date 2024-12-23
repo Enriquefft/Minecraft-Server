@@ -10,7 +10,7 @@
     "deploy": "cdk deploy --all --profile personal",
     "destroy": "cdk destroy --all --profile personal",
     "diff": "cdk diff --profile personal",
-        "lint": "eslint . --fix"
+    "lint": "eslint . --fix"
   },
   "devDependencies": {
     "@types/bun": "^1.1.14",
