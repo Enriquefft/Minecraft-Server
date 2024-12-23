@@ -117,8 +117,6 @@ export class MinecraftServerStack extends Stack {
       config.minecraftEdition,
     );
 
-    console.log("mine\n", config.minecraftImageEnv);
-
     const minecraftServerContainer = new ecs.ContainerDefinition(
       this,
       "ServerContainer",
@@ -217,22 +215,6 @@ export class MinecraftServerStack extends Stack {
       });
       snsTopicArn = snsTopic.topicArn;
     }
-
-    console.log({
-      environment: {
-        CLUSTER: constants.CLUSTER_NAME,
-        SERVICE: constants.SERVICE_NAME,
-        DNSZONE: hostedZoneId,
-        SERVERNAME: `${config.subdomainPart}.${config.domainName}`,
-        SNSTOPIC: snsTopicArn,
-        TWILIOFROM: config.twilio.phoneFrom,
-        TWILIOTO: config.twilio.phoneTo,
-        TWILIOAID: config.twilio.accountId,
-        TWILIOAUTH: config.twilio.authCode,
-        STARTUPMIN: config.startupMinutes,
-        SHUTDOWNMIN: config.shutdownMinutes,
-      },
-    });
 
     new ecs.ContainerDefinition(this, "WatchDogContainer", {
       containerName: constants.WATCHDOG_SERVER_CONTAINER_NAME,
