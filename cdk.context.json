@@ -1,0 +1,22 @@
+{
+  "availability-zones:account=235494781643:region=us-east-1": [
+    "us-east-1a",
+    "us-east-1b",
+    "us-east-1c",
+    "us-east-1d",
+    "us-east-1e",
+    "us-east-1f"
+  ],
+  "hosted-zone:account=971422703566:domainName=mc-utec.net:privateZone=false:region=us-east-1": {
+    "Id": "/hostedzone/Z04900281G1JKL1GIILYV",
+    "Name": "mc-utec.net."
+  },
+  "availability-zones:account=971422703566:region=us-east-1": [
+    "us-east-1a",
+    "us-east-1b",
+    "us-east-1c",
+    "us-east-1d",
+    "us-east-1e",
+    "us-east-1f"
+  ]
+}

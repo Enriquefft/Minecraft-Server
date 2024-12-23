@@ -6,8 +6,10 @@
     "minecraft-server": "bin/minecraft-server.js"
   },
   "scripts": {
-    "build": "bun build ./bin/minecraft-server.ts --target bun",
-    "cdk": "cdk"
+    "build": "bun build ./bin/minecraft-server.ts --target bun && cdk bootstrap --profile personal",
+    "deploy": "cdk deploy --all --profile personal",
+    "destroy": "cdk destroy --all --profile personal",
+    "diff": "cdk diff --profile personal"
   },
   "devDependencies": {
     "@types/bun": "^1.1.14",
@@ -18,7 +20,6 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jsdoc": "^50.6.1",
     "eslint-plugin-security": "^3.0.1",
-    "ts-node": "^10.9.2",
     "typescript": "~5.6.3"
   },
   "dependencies": {

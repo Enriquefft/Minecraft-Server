@@ -1,11 +1,70 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
+import { minecraftEnvVarsSchema } from "./lib/json-parse";
+
+/**
+ * Transform a string into a boolean (`"true"` => true, `"false"` => false).
+ * Throws if the input is a non-string or some unexpected string.
+ * You can make this more lenient if needed.
+ */
+const booleanStringSchema = z.string().transform((val) => {
+  const lower = val.toLowerCase();
+  if (lower === "true") return true;
+  if (lower === "false") return false;
+  throw new Error(`Expected "true" or "false", got "${val}"`);
+});
+
+/**
+ * Transform a string to a number.
+ * Throws if the string is not a valid integer.
+ * If you need floats, adjust parseInt => parseFloat.
+ */
+const stringToNumberSchema = z.string().transform((val) => {
+  const parsed = parseInt(val, 10);
+  if (isNaN(parsed)) {
+    throw new Error(`Expected number, received "${val}"`);
+  }
+  return parsed;
+});
+
+const stringIsNumberSchema = z.string().refine(
+  (val) => {
+    const num = Number(val);
+    return !isNaN(num) && val.length > 0;
+  },
+  { message: "Invalid number" },
+);
 
 export const env = createEnv({
   server: {
-    CDK_DEFAULT_ACCOUNT: z.string(),
-    CDK_DEFAULT_REGION: z.string(),
+    // Required
+    DOMAIN_NAME: z.string().nonempty("DOMAIN_NAME is required"),
+    CDK_DEFAULT_ACCOUNT: z.string().nonempty("CDK_DEFAULT_ACCOUNT is required"),
+    CDK_DEFAULT_REGION: z.string().nonempty("CDK_DEFAULT_REGION is required"),
+
+    // Optional (with transformations)
+    SUBDOMAIN_PART: z.string().optional(),
+    SERVER_REGION: z.string().optional(),
+    MINECRAFT_EDITION: z.enum(["java", "bedrock"]).optional(),
+
+    STARTUP_MINUTES: stringIsNumberSchema.optional(),
+    SHUTDOWN_MINUTES: stringIsNumberSchema.optional(),
+    USE_FARGATE_SPOT: booleanStringSchema.optional(),
+    TASK_MEMORY: stringToNumberSchema.optional(),
+    TASK_CPU: stringToNumberSchema.optional(),
+    VPC_ID: z.string().optional(),
+    MINECRAFT_IMAGE_ENV_VARS_JSON: minecraftEnvVarsSchema,
+    SNS_EMAIL_ADDRESS: z.string().optional(),
+    TWILIO_PHONE_FROM: z.string().optional(),
+    TWILIO_PHONE_TO: z.string().optional(),
+    TWILIO_ACCOUNT_ID: z.string().optional(),
+    TWILIO_AUTH_CODE: z.string().optional(),
+
+    DEBUG: booleanStringSchema.optional(),
+
+    // If you need CDK_NEW_BOOTSTRAP as an integer:
+    CDK_NEW_BOOTSTRAP: stringToNumberSchema.optional(),
   },
 
   /**
@@ -23,17 +82,7 @@ export const env = createEnv({
   runtimeEnv: process.env,
 
   /**
-   * By default, this library will feed the environment variables directly to
-   * the Zod validator.
-   *
-   * This means that if you have an empty string for a value that is supposed
-   * to be a number (e.g. `PORT=` in a ".env" file), Zod will incorrectly flag
-   * it as a type mismatch violation. Additionally, if you have an empty string
-   * for a value that is supposed to be a string with a default value (e.g.
-   * `DOMAIN=` in an ".env" file), the default value will never be applied.
-   *
-   * In order to solve these issues, we recommend that all new projects
-   * explicitly specify this option as true.
+   * As recommended, treat empty strings as undefined for validation.
    */
   emptyStringAsUndefined: true,
 });
