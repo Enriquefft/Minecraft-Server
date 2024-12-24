@@ -11,6 +11,9 @@ import {
   aws_ecs as ecs,
   aws_logs as logs,
   aws_sns as sns,
+  aws_backup as backup,
+  aws_s3 as s3,
+  aws_s3_deployment as s3deploy,
   RemovalPolicy,
   Arn,
   ArnFormat,
@@ -40,6 +43,9 @@ export class MinecraftServerStack extends Stack {
     const fileSystem = new efs.FileSystem(this, "FileSystem", {
       vpc,
       removalPolicy: RemovalPolicy.RETAIN,
+      performanceMode: efs.PerformanceMode.GENERAL_PURPOSE,
+      throughputMode: efs.ThroughputMode.BURSTING,
+      lifecyclePolicy: efs.LifecyclePolicy.AFTER_14_DAYS,
     });
 
     const accessPoint = new efs.AccessPoint(this, "AccessPoint", {
@@ -54,6 +60,15 @@ export class MinecraftServerStack extends Stack {
         ownerUid: "1000",
         permissions: "0755",
       },
+    });
+
+    const backupPlan = backup.BackupPlan.daily35DayRetention(
+      this,
+      "EFSBackupPlan",
+    );
+
+    backupPlan.addSelection("EFSSelection", {
+      resources: [backup.BackupResource.fromEfsFileSystem(fileSystem)],
     });
 
     const efsReadWriteDataPolicy = new iam.Policy(this, "DataRWPolicy", {
@@ -117,6 +132,32 @@ export class MinecraftServerStack extends Stack {
       config.minecraftEdition,
     );
 
+    const modpackBucket = new s3.Bucket(this, "ModpackBucket", {
+      removalPolicy: RemovalPolicy.RETAIN,
+      autoDeleteObjects: false, // Do not automatically delete objects
+      // Allow public access to the bucket
+      blockPublicAccess: {
+        blockPublicPolicy: false,
+        blockPublicAcls: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false,
+      },
+      publicReadAccess: true, // Make the bucket publicly readable
+    });
+    const modpackDeployment = new s3deploy.BucketDeployment(
+      this,
+      "DeployModpack",
+      {
+        sources: [
+          s3deploy.Source.asset(path.join(__dirname, "../modpack.zip")),
+        ],
+        destinationBucket: modpackBucket,
+        destinationKeyPrefix: "modpack/",
+      },
+    );
+    const modpackFileName = "1.21.4-vanilla+.mrpack";
+    const modpackUrl = `https://${modpackBucket.bucketName}.s3.${this.region}.amazonaws.com/modpack/${encodeURIComponent(modpackFileName)}`;
+
     const minecraftServerContainer = new ecs.ContainerDefinition(
       this,
       "ServerContainer",
@@ -130,7 +171,10 @@ export class MinecraftServerStack extends Stack {
             protocol: minecraftServerConfig.protocol,
           },
         ],
-        environment: config.minecraftImageEnv,
+        environment: {
+          MODRINTH_MODPACK: modpackUrl,
+          ...config.minecraftImageEnv,
+        },
         essential: false,
         taskDefinition,
         logging: config.debug
@@ -184,6 +228,7 @@ export class MinecraftServerStack extends Stack {
         securityGroups: [serviceSecurityGroup],
       },
     );
+    minecraftServerService.node.addDependency(modpackDeployment);
 
     /* Allow access to EFS from Fargate service security group */
     fileSystem.connections.allowDefaultPortFrom(

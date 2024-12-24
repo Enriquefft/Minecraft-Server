@@ -15,8 +15,10 @@ const minecraftImageConfig: MinecraftJavaImageConfig = {
   VIEW_DISTANCE: "12",
   GENERATE_STRUCTURES: "TRUE",
   PVP: "TRUE",
+  SEED: "4293057321386939148",
 
-  MODRINTH_MODPACK: "../1.21.4-vanilla+ 1.0.0.mrpack",
+  // MODRINTH_MODPACK: "../1.21.4-vanilla+ 1.0.0.mrpack",
+
   MODRINTH_LOADER: "fabric",
   FORCE_GAMEMODE: "TRUE",
 };
