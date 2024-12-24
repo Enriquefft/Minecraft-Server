@@ -240,12 +240,37 @@ const LevelTypeEnum = z.enum([
 ]);
 
 /**
+ * Enum representing the default version types for Modrinth modpacks.
+ */
+const ModrinthDefaultVersionTypeEnum = z.enum(["release", "beta", "alpha"]);
+
+/**
+ * Enum representing the mod loader types for Modrinth modpacks.
+ */
+const ModrinthLoaderEnum = z.enum(["forge", "fabric", "quilt"]);
+
+/**
  * Zod schema for the minecraft-server java docker configuration.
  */
 export const minecraftJavaImageConfigSchema = z
   .object({
     // Required
     EULA: z.literal("TRUE"),
+
+    /**
+     * To use a different Minecraft version, pass the VERSION environment variable (case sensitive), which can have the value
+     *
+     * -    LATEST (the default)
+     * -    SNAPSHOT
+     * -    a specific version, such as "1.7.9"
+     * -    or an alpha and beta version, such as "b1.7.3" (server download might not exist)
+     *
+     * For example, to use the latest snapshot:
+     *      "SNAPSHOT"
+     * or a specific version:
+     *      "1.7.9"
+     */
+    VERSION: z.string().optional(),
 
     /**
      * Message of the Day (MOTD) displayed in the client UI.
@@ -581,6 +606,83 @@ export const minecraftJavaImageConfigSchema = z
      * "custom1=value1\ncustom2=value2"
      */
     CUSTOM_SERVER_PROPERTIES: z.string().optional(),
+
+    /*
+     * =================================
+     * === Modrinth Modpacks Section ===
+     * =================================
+     */
+
+    /**
+     * Specifies the Modrinth modpack project.
+     * Can be a slug, project ID, project URL, custom URL to mrpack file, or container path to local mrpack file.
+     */
+    MODRINTH_MODPACK: z.string().optional(),
+
+    /**
+     * Platform for the modpack. Setting to "MODRINTH" enables automatic installation.
+     * Alternatively, set MOD_PLATFORM or TYPE to "MODRINTH".
+     */
+    MODPACK_PLATFORM: z.string().optional(), // Alternatively, consider defining as an enum if applicable.
+
+    /**
+     * Alternative platform setting for the modpack. Setting to "MODRINTH" enables automatic installation.
+     */
+    MOD_PLATFORM: z.string().optional(), // Alternatively, define as enum.
+
+    /**
+     * Alternative type setting for the modpack. Setting to "MODRINTH" enables automatic installation.
+     */
+    TYPE: z.string().optional(), // Alternatively, define as enum.
+
+    /**
+     * Specifies the desired modpack version type when VERSION is "LATEST" or "SNAPSHOT".
+     * Valid values: 'release', 'beta', 'alpha'.
+     */
+    MODRINTH_DEFAULT_VERSION_TYPE: ModrinthDefaultVersionTypeEnum.optional(),
+
+    /**
+     * Specifies the mod loader type for the modpack.
+     * Valid values: 'forge', 'fabric', 'quilt'.
+     */
+    MODRINTH_LOADER: ModrinthLoaderEnum.optional(),
+
+    /**
+     * Specifies which files to ignore if they are missing during installation.
+     * Comma or newline delimited list.
+     */
+    MODRINTH_IGNORE_MISSING_FILES: z.string().optional(),
+
+    /**
+     * Specifies files to exclude from the modpack installation.
+     * Comma or newline delimited list of partial file names.
+     */
+    MODRINTH_EXCLUDE_FILES: z.string().optional(),
+
+    /**
+     * Specifies files to force include in the modpack installation.
+     * Comma or newline delimited list of partial file names.
+     */
+    MODRINTH_FORCE_INCLUDE_FILES: z.string().optional(),
+
+    /**
+     * Forces synchronization of include/exclude files.
+     * Useful when iterating on compatible sets of mods.
+     * Default: false
+     */
+    MODRINTH_FORCE_SYNCHRONIZE: stringIsBooleanSchema.optional(),
+
+    /**
+     * Disables default exclude/include settings maintained by the image.
+     * Set to an empty string to disable defaults.
+     */
+    MODRINTH_DEFAULT_EXCLUDE_INCLUDES: z.string().optional(),
+
+    /**
+     * Specifies overrides exclusions using ant-style paths relative to the overrides or /data directory.
+     * Comma or newline delimited list of ant-style paths.
+     */
+    MODRINTH_OVERRIDES_EXCLUSIONS: z.string().optional(),
   })
   .catchall(z.string());
 
