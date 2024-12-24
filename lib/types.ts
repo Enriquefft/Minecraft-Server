@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /* eslint-disable @typescript-eslint/naming-convention */
 import type { Protocol } from "aws-cdk-lib/aws-ecs";
 import type { Port } from "aws-cdk-lib/aws-ec2";
@@ -46,25 +47,6 @@ export const stringIsBooleanSchema = z
       message: "Invalid boolean",
     },
   );
-
-/**
- * The top-level schema that ensures:
- * - It is an object with at least { EULA: string }
- * - All other properties are valid JSON (validated by the above `jsonSchema`).
- */
-export const minecraftEnvVarsSchema = z.preprocess(
-  (val: unknown) => {
-    const jsonValue = z.string().parse(val);
-    return JSON.parse(jsonValue);
-  },
-  z
-    .object({
-      EULA: z.literal("TRUE"),
-      ONLINE_MODE: stringIsBooleanSchema.optional(),
-    })
-    .catchall(z.string()),
-);
-export type MinecraftImageEnv = z.infer<typeof minecraftEnvVarsSchema>;
 
 interface TwilioConfig {
   /**
@@ -186,9 +168,8 @@ export interface StackConfig {
    * Additional environment variables to be passed to the
    * [Minecraft Docker Server](https://github.com/itzg/docker-minecraft-server/blob/master/README.md)
    * [Minecraft Bedrock Docker](https://github.com/itzg/docker-minecraft-bedrock-server/blob/master/README.md)
-   * @default '{ "EULA": "TRUE" }'
    */
-  minecraftImageEnv: MinecraftImageEnv;
+  minecraftImageEnv: MinecraftJavaImageConfig;
   /**
    * Setting to `true` enables debug mode.
    *
@@ -218,3 +199,394 @@ export interface MinecraftEditionConfig {
    */
   ingressRulePort: Port;
 }
+
+// Minecraft Server Configuration Schema using Zod
+
+/**
+ * Enum representing the difficulty levels for the Minecraft server.
+ */
+const DifficultyEnum = z.enum(["peaceful", "easy", "normal", "hard"]);
+
+/**
+ * Enum representing the behavior when an existing whitelist file is present.
+ */
+const ExistingFileBehaviorEnum = z.enum([
+  "SKIP",
+  "SYNCHRONIZE",
+  "MERGE",
+  "SYNC_FILE_MERGE_LIST",
+]);
+
+/**
+ * Enum representing the user API providers.
+ */
+const UserApiProviderEnum = z.enum(["playerdb", "mojang"]);
+
+/**
+ * Enum representing the game modes.
+ */
+const GameModeEnum = z.enum(["creative", "survival", "adventure", "spectator"]);
+
+/**
+ * Enum representing the level types.
+ */
+const LevelTypeEnum = z.enum([
+  "DEFAULT",
+  "FLAT",
+  "LARGEBIOMES",
+  "AMPLIFIED",
+  "CUSTOMIZED",
+  "DEBUG",
+]);
+
+/**
+ * Zod schema for the minecraft-server java docker configuration.
+ */
+export const minecraftJavaImageConfigSchema = z
+  .object({
+    // Required
+    EULA: z.literal("TRUE"),
+
+    /**
+     * Message of the Day (MOTD) displayed in the client UI.
+     * Supports placeholders like %VAR% or %date:FMT%.
+     * Example: "Running %MODPACK_NAME% version %env:MODPACK_VERSION%"
+     */
+    MOTD: z.string().optional(),
+
+    /**
+     * Difficulty level of the server.
+     * Valid values: 'peaceful', 'easy', 'normal', 'hard'.
+     * Default: 'easy'
+     */
+    DIFFICULTY: DifficultyEnum.optional(),
+
+    /**
+     * Whether to override the server.properties file with environment variables.
+     * Set to false to manually manage server.properties.
+     * Default: true
+     */
+    OVERRIDE_SERVER_PROPERTIES: stringIsBooleanSchema.optional(),
+
+    /**
+     * Whether to skip the creation of the server.properties file.
+     * Set to true to manage server.properties manually.
+     * Default: false
+     */
+    SKIP_SERVER_PROPERTIES: stringIsBooleanSchema.optional(),
+
+    /**
+     * Environment variables to dump server.properties before startup.
+     * Set to true to output server.properties contents.
+     */
+    DUMP_SERVER_PROPERTIES: stringIsBooleanSchema.optional(),
+
+    /**
+     * Whitelist of players as a comma or newline-separated string.
+     * Example:
+     * WHITELIST: "user1\nuser2\nuser3"
+     */
+    WHITELIST: z.string().optional(),
+
+    /**
+     * URL or container path to a whitelist file.
+     */
+    WHITELIST_FILE: z.string().optional(),
+
+    /**
+     * Behavior when an existing whitelist file is present.
+     * Default: SYNC_FILE_MERGE_LIST
+     */
+    EXISTING_WHITELIST_FILE: ExistingFileBehaviorEnum.optional(),
+
+    /**
+     * Enforce whitelist changes immediately when whitelist commands are used.
+     */
+    ENFORCE_WHITELIST: stringIsBooleanSchema.optional(),
+
+    /**
+     * Enable whitelist if managing the whitelist file manually.
+     */
+    ENABLE_WHITELIST: stringIsBooleanSchema.optional(),
+
+    /**
+     * User API provider for resolving usernames.
+     * Default: PlayerDB
+     */
+    USER_API_PROVIDER: UserApiProviderEnum.optional(),
+
+    /**
+     * Operators (admins) as a comma or newline-separated string.
+     * Example:
+     * OPS: "admin1\nadmin2\nadmin3"
+     */
+    OPS: z.string().optional(),
+
+    /**
+     * URL or container path to an ops file.
+     */
+    OPS_FILE: z.string().optional(),
+
+    /**
+     * Behavior when an existing ops file is present.
+     * Default: SYNC_FILE_MERGE_LIST
+     */
+    EXISTING_OPS_FILE: ExistingFileBehaviorEnum.optional(),
+
+    /**
+     * Enable ops if managing the ops file manually.
+     */
+    ENABLE_OPS: stringIsBooleanSchema.optional(),
+
+    /**
+     * Initial datapacks to enable before world creation.
+     * Comma-separated list.
+     */
+    INITIAL_ENABLED_PACKS: z.string().optional(),
+
+    /**
+     * Initial datapacks to disable before world creation.
+     * Comma-separated list.
+     */
+    INITIAL_DISABLED_PACKS: z.string().optional(),
+
+    /**
+     * URL to a server icon image.
+     */
+    ICON: z.string().optional(),
+
+    /**
+     * Whether to override the existing server icon.
+     * Default: false
+     */
+    OVERRIDE_ICON: stringIsBooleanSchema.optional(),
+
+    /**
+     * Enable RCON for remote console access.
+     * Default: true
+     */
+    ENABLE_RCON: stringIsBooleanSchema.optional(),
+
+    /**
+     * RCON password.
+     * If not set, a random password is generated on startup.
+     */
+    RCON_PASSWORD: z.string().optional(),
+
+    /**
+     * RCON port.
+     * Default: 25575
+     */
+    RCON_PORT: stringIsNumberSchema.optional(),
+
+    /**
+     * Enable the GameSpy query protocol.
+     * Default: false
+     */
+    ENABLE_QUERY: stringIsBooleanSchema.optional(),
+
+    /**
+     * Query port (UDP).
+     * Default: 25565
+     */
+    QUERY_PORT: stringIsNumberSchema.optional(),
+
+    /**
+     * Maximum number of players.
+     * Default: 20
+     */
+    MAX_PLAYERS: stringIsNumberSchema.optional(),
+
+    /**
+     * Maximum world size in blocks (radius).
+     */
+    MAX_WORLD_SIZE: stringIsNumberSchema.optional(),
+
+    /**
+     * Allow players to travel to the Nether.
+     * Default: true
+     */
+    ALLOW_NETHER: stringIsBooleanSchema.optional(),
+
+    /**
+     * Announce player achievements in chat.
+     * Default: false
+     */
+    ANNOUNCE_PLAYER_ACHIEVEMENTS: stringIsBooleanSchema.optional(),
+
+    /**
+     * Enable command blocks.
+     * Default: false
+     */
+    ENABLE_COMMAND_BLOCK: stringIsBooleanSchema.optional(),
+
+    /**
+     * Force players to join in the default game mode.
+     * Default: false
+     */
+    FORCE_GAMEMODE: stringIsBooleanSchema.optional(),
+
+    /**
+     * Define whether structures will be generated in new chunks.
+     * Default: true
+     */
+    GENERATE_STRUCTURES: stringIsBooleanSchema.optional(),
+
+    /**
+     * Enable hardcore mode where players are set to spectator on death.
+     * Default: false
+     */
+    HARDCORE: stringIsBooleanSchema.optional(),
+
+    /**
+     * Enable or disable the snooper (data collection).
+     * Default: true
+     */
+    SNOOPER_ENABLED: stringIsBooleanSchema.optional(),
+
+    /**
+     * Maximum build height.
+     * Default: 256
+     */
+    MAX_BUILD_HEIGHT: stringIsNumberSchema.optional(),
+
+    /**
+     * Maximum tick time in milliseconds before the server is forcibly shutdown.
+     * Set to -1 to disable the watchdog.
+     * Default: 60000
+     */
+    MAX_TICK_TIME: stringIsNumberSchema.optional(),
+
+    /**
+     * Allow animals to spawn.
+     * Default: true
+     */
+    SPAWN_ANIMALS: stringIsBooleanSchema.optional(),
+
+    /**
+     * Allow monsters to spawn.
+     * Default: true
+     */
+    SPAWN_MONSTERS: stringIsBooleanSchema.optional(),
+
+    /**
+     * Allow NPCs (villagers) to spawn.
+     * Default: true
+     */
+    SPAWN_NPCS: stringIsBooleanSchema.optional(),
+
+    /**
+     * Set spawn protection area radius.
+     * Non-ops cannot edit within this area.
+     * Set to 0 to disable.
+     * Default: 0
+     */
+    SPAWN_PROTECTION: stringIsNumberSchema.optional(),
+
+    /**
+     * View distance in chunks (radius).
+     * Determines server-side viewing distance.
+     * Default: 10
+     */
+    VIEW_DISTANCE: stringIsNumberSchema.optional(),
+
+    /**
+     * Seed for world generation.
+     * Can be a positive or negative number.
+     * Example: "1785852800490497919" or "-1785852800490497919"
+     */
+    SEED: z.string().optional(),
+
+    /**
+     * Game mode for the server.
+     * Default: 'survival'
+     */
+    MODE: GameModeEnum.optional(),
+
+    /**
+     * Enable or disable player-vs-player (PVP) mode.
+     * Default: true
+     */
+    PVP: stringIsBooleanSchema.optional(),
+
+    /**
+     * Level type for world generation.
+     * Default: 'DEFAULT'
+     */
+    LEVEL_TYPE: LevelTypeEnum.optional(),
+
+    /**
+     * JSON string for generator settings.
+     * Example for superflat:
+     * {
+     *   "layers": [
+     *     { "block": "minecraft:bedrock", "height": 1 },
+     *     { "block": "minecraft:stone", "height": 2 },
+     *     { "block": "minecraft:sandstone", "height": 15 }
+     *   ],
+     *   "biome": "minecraft:desert"
+     * }
+     */
+    GENERATOR_SETTINGS: z.string().optional(),
+
+    /**
+     * URL to a custom resource pack.
+     */
+    RESOURCE_PACK: z.string().optional(),
+
+    /**
+     * SHA1 checksum of the custom resource pack.
+     */
+    RESOURCE_PACK_SHA1: z.string().optional(),
+
+    /**
+     * Enforce the resource pack on clients.
+     * Default: false
+     */
+    RESOURCE_PACK_ENFORCE: stringIsBooleanSchema.optional(),
+
+    /**
+     * Name of the world save.
+     * Default: 'world'
+     */
+    LEVEL: z.string().optional(),
+
+    /**
+     * Online mode for authentication.
+     * Default: true
+     */
+    ONLINE_MODE: stringIsBooleanSchema.optional(),
+
+    /**
+     * Allow flight for players with mods.
+     * Default: false
+     */
+    ALLOW_FLIGHT: stringIsBooleanSchema.optional(),
+
+    /**
+     * Name of the server (e.g., for BungeeCord).
+     */
+    SERVER_NAME: z.string().optional(),
+
+    /**
+     * Server port.
+     * Only change if necessary and ensure port mappings are updated.
+     * Default: 25565
+     */
+    SERVER_PORT: stringIsNumberSchema.optional(),
+
+    /**
+     * Custom server properties as newline-delimited name=value pairs.
+     * Example:
+     * "custom1=value1\ncustom2=value2"
+     */
+    CUSTOM_SERVER_PROPERTIES: z.string().optional(),
+  })
+  .catchall(z.string());
+
+/**
+ * TypeScript type inferred from the MinecraftServerConfigSchema.
+ */
+export type MinecraftJavaImageConfig = z.infer<
+  typeof minecraftJavaImageConfigSchema
+>;

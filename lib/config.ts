@@ -1,6 +1,15 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import type { StackConfig } from "./types";
+import {
+  type StackConfig,
+  minecraftJavaImageConfigSchema,
+  type MinecraftJavaImageConfig,
+} from "./types";
 import { env } from "../env";
+
+const minecraftImageConfig: MinecraftJavaImageConfig = {
+  EULA: "TRUE",
+  ONLINE_MODE: "FALSE",
+};
 
 export const resolveConfig = (): StackConfig => ({
   domainName: env.DOMAIN_NAME || "",
@@ -13,7 +22,9 @@ export const resolveConfig = (): StackConfig => ({
   taskCpu: env.TASK_CPU,
   taskMemory: env.TASK_MEMORY,
   vpcId: env.VPC_ID ?? "",
-  minecraftImageEnv: env.MINECRAFT_IMAGE_ENV_VARS_JSON,
+  minecraftImageEnv: minecraftJavaImageConfigSchema.parse(
+    minecraftImageConfig,
+  ) satisfies Record<string, string>,
   snsEmailAddress: env.SNS_EMAIL_ADDRESS ?? "",
   twilio: {
     phoneFrom: env.TWILIO_PHONE_FROM ?? "",

@@ -3,7 +3,6 @@ import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
 import {
-  minecraftEnvVarsSchema,
   booleanStringSchema,
   stringIsNumberSchema,
   stringToNumberSchema,
@@ -29,7 +28,6 @@ export const env = createEnv({
     TASK_MEMORY: stringToNumberSchema.optional().default(DEFAULT_TASK_MEMORY),
     TASK_CPU: stringToNumberSchema.optional().default(DEFAULT_TASK_CPU),
     VPC_ID: z.string().optional(),
-    MINECRAFT_IMAGE_ENV_VARS_JSON: minecraftEnvVarsSchema,
     SNS_EMAIL_ADDRESS: z.string().optional(),
     TWILIO_PHONE_FROM: z.string().optional(),
     TWILIO_PHONE_TO: z.string().optional(),
