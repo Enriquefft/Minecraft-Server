@@ -9,6 +9,16 @@ import { env } from "../env";
 const minecraftImageConfig: MinecraftJavaImageConfig = {
   EULA: "TRUE",
   ONLINE_MODE: "FALSE",
+  MODPACK_PLATFORM: "MODRINTH",
+  MODE: "survival",
+  DIFFICULTY: "hard",
+  VIEW_DISTANCE: "12",
+  GENERATE_STRUCTURES: "TRUE",
+  PVP: "TRUE",
+
+  MODRINTH_MODPACK: "../1.21.4-vanilla+ 1.0.0.mrpack",
+  MODRINTH_LOADER: "fabric",
+  FORCE_GAMEMODE: "TRUE",
 };
 
 export const resolveConfig = (): StackConfig => ({
