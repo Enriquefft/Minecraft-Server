@@ -17,7 +17,13 @@ const minecraftImageConfig: MinecraftJavaImageConfig = {
   PVP: "TRUE",
   SEED: "4293057321386939148",
 
-  // MODRINTH_MODPACK: "../1.21.4-vanilla+ 1.0.0.mrpack",
+  /*
+   * https://github.com/itzg/docker-minecraft-server/issues/3145
+   * VANILLATWEAKS_SHARECODE: "AhxgFQ",
+   */
+
+  RESOURCE_PACK: "https://vanillatweaks.net/share#aWfPI4",
+  RESOURCE_PACK_SHA1: "11e1b75f4b7dbc8ff8b6ea6e42bd50c4ee198ae7",
 
   MODRINTH_LOADER: "fabric",
   FORCE_GAMEMODE: "TRUE",

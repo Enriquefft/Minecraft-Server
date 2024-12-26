@@ -10,4 +10,4 @@ export const constants = {
   LAUNCHER_LAMBDA_ARN_SSM_PARAMETER: "LauncherLambdaRoleArn",
   JAVA_EDITION_DOCKER_IMAGE: "itzg/minecraft-server",
   BEDROCK_EDITION_DOCKER_IMAGE: "itzg/minecraft-bedrock-server",
-};
+} as const;

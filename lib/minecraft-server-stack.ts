@@ -23,6 +23,7 @@ import { constants } from "./constants";
 import { SSMParameterReader } from "./ssm-parameter-reader";
 import { getMinecraftServerConfig, isDockerInstalled } from "./util";
 import type { StackConfig } from "./types";
+import { Glob } from "bun";
 
 export class MinecraftServerStack extends Stack {
   public constructor(
@@ -144,19 +145,42 @@ export class MinecraftServerStack extends Stack {
       },
       publicReadAccess: true, // Make the bucket publicly readable
     });
-    const modpackDeployment = new s3deploy.BucketDeployment(
+
+    const zipGlob = new Glob("**/*.zip");
+    const datapackFiles = Array.from(
+      zipGlob.scanSync(path.join(__dirname, "../datapacks")),
+    );
+
+    const datapackAssets = new s3deploy.BucketDeployment(
       this,
-      "DeployModpack",
+      "DeployDatapack",
       {
+        memoryLimit: 2048,
         sources: [
-          s3deploy.Source.asset(path.join(__dirname, "../modpack.zip")),
+          s3deploy.Source.asset(path.join(__dirname, "../datapacks.zip")),
         ],
+
         destinationBucket: modpackBucket,
-        destinationKeyPrefix: "modpack/",
+        destinationKeyPrefix: "/",
       },
     );
-    const modpackFileName = "1.21.4-vanilla+.mrpack";
+
+    const modpackAssets = new s3deploy.BucketDeployment(this, "DeployModpack", {
+      sources: [
+        s3deploy.Source.asset(path.join(__dirname, "../modpack.zip")),
+        s3deploy.Source.asset(path.join(__dirname, "../modpack-full.zip")),
+      ],
+      destinationBucket: modpackBucket,
+      destinationKeyPrefix: "modpack/",
+    });
+    const modpackFileName = "1.21.4-vanilla+ 1.0.0.mrpack";
     const modpackUrl = `https://${modpackBucket.bucketName}.s3.${this.region}.amazonaws.com/modpack/${encodeURIComponent(modpackFileName)}`;
+
+    const baseDatapacksUrl = `https://${modpackBucket.bucketName}.s3.${this.region}.amazonaws.com/datapacks/`;
+    const datapacksUrls = datapackFiles.map(
+      (datapackFile) => `${baseDatapacksUrl}${encodeURIComponent(path.basename(datapackFile))}`,
+    );
+    console.log("urls: ", datapacksUrls);
 
     const minecraftServerContainer = new ecs.ContainerDefinition(
       this,
@@ -173,6 +197,7 @@ export class MinecraftServerStack extends Stack {
         ],
         environment: {
           MODRINTH_MODPACK: modpackUrl,
+          DATAPACKS: datapacksUrls.join(","),
           ...config.minecraftImageEnv,
         },
         essential: false,
@@ -228,7 +253,8 @@ export class MinecraftServerStack extends Stack {
         securityGroups: [serviceSecurityGroup],
       },
     );
-    minecraftServerService.node.addDependency(modpackDeployment);
+    minecraftServerService.node.addDependency(modpackAssets);
+    minecraftServerService.node.addDependency(datapackAssets);
 
     /* Allow access to EFS from Fargate service security group */
     fileSystem.connections.allowDefaultPortFrom(
