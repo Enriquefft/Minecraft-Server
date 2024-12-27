@@ -178,7 +178,8 @@ export class MinecraftServerStack extends Stack {
 
     const baseDatapacksUrl = `https://${modpackBucket.bucketName}.s3.${this.region}.amazonaws.com/datapacks/`;
     const datapacksUrls = datapackFiles.map(
-      (datapackFile) => `${baseDatapacksUrl}${encodeURIComponent(path.basename(datapackFile))}`,
+      (datapackFile) =>
+        `${baseDatapacksUrl}${encodeURIComponent(path.basename(datapackFile))}`,
     );
     console.log("urls: ", datapacksUrls);
 

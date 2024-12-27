@@ -8,8 +8,11 @@ import {
   stringToNumberSchema,
 } from "./lib/types";
 
-const DEFAULT_TASK_MEMORY = "2048";
-const DEFAULT_TASK_CPU = "1024";
+// 6 RAM
+const DEFAULT_TASK_MEMORY = "6144";
+// 1 vCPU
+const DEFAULT_TASK_CPU = "2048";
+
 export const env = createEnv({
   server: {
     // Required
